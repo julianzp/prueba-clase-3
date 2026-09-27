@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de usuarios · v1</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f8;color:#172c43;font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1080px;margin:44px auto;padding:0 24px}header{margin-bottom:28px}
+.eyebrow{font-size:13px;letter-spacing:.12em;font-weight:750;color:#44617e;text-transform:uppercase}h1{font-size:clamp(30px,5vw,44px);line-height:1.14;letter-spacing:-.04em;margin:12px 0}header p{max-width:720px;color:#536578}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:24px}.panel{background:white;border:1px solid #d9e2ec;border-radius:18px;padding:28px;box-shadow:0 8px 24px #182c4306}h2{font-size:22px;line-height:1.3;margin:0 0 20px}label{display:block;font-weight:650;margin:16px 0 6px}input{width:100%;font:inherit;padding:12px;border:1px solid #9fadc0;border-radius:8px;background:white;color:#172c43}input:focus{outline:3px solid #c3d7ff;border-color:#245dd7}
+.hint{font-size:13px;color:#526578;margin:6px 0 0}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}button{cursor:pointer;border:0;background:#245dd7;color:#fff;border-radius:8px;font:600 15px system-ui;padding:13px 18px}button.secondary{background:#eaf0f6;color:#172c43}button:focus-visible{outline:3px solid #88aefa;outline-offset:3px}
+.status{padding:14px 16px;border-radius:8px;background:#edf2f7;font-weight:650;margin-bottom:20px}.status.ok{background:#e3f5ec;color:#155339}.status.error{background:#ffeded;color:#922525}
+dl{margin:0}dl>div{padding:10px 0;border-bottom:1px solid #e6ecf2}dt{color:#5c6b7b;font-size:13px}dd{margin:3px 0 0;overflow-wrap:anywhere;font-weight:550}.note{margin-top:20px;font-size:13px;color:#526578}footer{color:#536578;font-size:13px;margin-top:24px}
+@media(max-width:760px){main{margin:26px auto;padding:0 16px}.layout{grid-template-columns:1fr}.panel{padding:22px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">Laboratorio de pruebas de software · v1</div>
+<h1>Registro de usuarios</h1>
+<p>Complete el formulario y observe el resultado. Utilice datos ficticios: el registro se conserva solo en la memoria de esta página.</p></header>
+<div class="layout">
+<section class="panel" aria-labelledby="form-title"><h2 id="form-title">Crear una cuenta de práctica</h2>
+<!-- novalidate permite controlar las reglas con JavaScript para esta práctica. -->
+<form id="registro" novalidate autocomplete="off">
+<label for="nombre">Nombre</label><input id="nombre" name="nombre" placeholder="Ej.: Ana" autocomplete="off">
+<label for="correo">Correo electrónico</label><input id="correo" name="correo" type="email" placeholder="Ej.: ana@example.com" autocomplete="off" aria-describedby="correo-hint">
+<p class="hint" id="correo-hint">El correo es obligatorio.</p>
+<label for="clave">Contraseña de práctica</label><input id="clave" name="clave" type="password" autocomplete="new-password" placeholder="Ingrese una contraseña ficticia" aria-describedby="clave-hint">
+<p class="hint" id="clave-hint">Mínimo 8 caracteres. Use Abcd1234 o Abcd123 en los casos de clase.</p>
+<div class="actions"><button type="submit">Registrarse</button><button type="button" class="secondary" id="reiniciar">Reiniciar prueba</button></div>
+</form><p class="note">Reiniciar prueba borra los datos y registros temporales. Comience cada caso desde cero.</p></section>
+<section class="panel" aria-labelledby="result-title"><h2 id="result-title">Resultado de la ejecución</h2>
+<div id="estado" class="status" role="status" aria-live="polite">Pendiente de ejecución</div>
+<dl>
+<div><dt>Versión y ambiente</dt><dd>v1 · HTML local · Demostración</dd></div>
+<div><dt>Fecha y hora del intento</dt><dd id="momento">Sin ejecutar</dd></div>
+<div><dt>Correo enviado</dt><dd id="correo-enviado">Sin ejecutar</dd></div>
+<div><dt>Longitud de la contraseña enviada</dt><dd id="longitud">Sin ejecutar</dd></div>
+<div><dt>Cuenta creada en este intento</dt><dd id="creada">Sin ejecutar</dd></div>
+<div><dt>Registros temporales actuales</dt><dd id="cantidad">0</dd></div>
+<div><dt>Último registro temporal</dt><dd id="ultimo">Ninguno</dd></div>
+</dl><p class="note">La captura puede incluir el formulario y este panel como evidencia. Anote también el caso, el navegador y su versión en GitHub Issues.</p></section>
+</div><footer>Clase 3 · Profesor Francisco Samacá · No hay servidor, envío de datos ni almacenamiento permanente. La contraseña nunca se guarda.</footer>
+</main>
+<script>
+'use strict';
+// Cada HTML funciona por separado y sin dependencias.
+const VERSION = 'v1';
+const VALIDAR_CORREO_Y_LONGITUD = false;
+const form = document.getElementById('registro');
+const estado = document.getElementById('estado');
+// Los registros viven en memoria. Recargar o reiniciar los elimina.
+let cuentas = [];
+
+function validar(nombre, correo, clave) {
+  if (!nombre.trim()) return 'El nombre es obligatorio';
+  // v1 omite intencionalmente RF-02 y RF-03. v2 incorpora ambas reglas.
+  if (VALIDAR_CORREO_Y_LONGITUD && !correo.trim()) return 'El correo es obligatorio';
+  if (correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+    return 'Ingrese un correo válido';
+  }
+  if (VALIDAR_CORREO_Y_LONGITUD && Array.from(clave).length < 8) {
+    return 'La contraseña debe tener al menos 8 caracteres';
+  }
+  return '';
+}
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault(); // Evita recargar la página o enviar datos.
+  const nombre = document.getElementById('nombre').value.trim();
+  const correo = document.getElementById('correo').value.trim();
+  const clave = document.getElementById('clave').value;
+  const error = validar(nombre, correo, clave);
+  // textContent muestra datos como texto y no ejecuta HTML ingresado.
+  document.getElementById('momento').textContent = new Date().toLocaleString('es-CO');
+  document.getElementById('correo-enviado').textContent = correo || '(vacío)';
+  document.getElementById('longitud').textContent = Array.from(clave).length + ' caracteres';
+  document.getElementById('creada').textContent = error ? 'No' : 'Sí';
+  estado.textContent = error || 'Registro exitoso';
+  estado.className = 'status ' + (error ? 'error' : 'ok');
+  if (!error) {
+    // Solo se conservan identificador, nombre y correo, nunca la contraseña.
+    const cuenta = {id: cuentas.length + 1, nombre, correo};
+    cuentas.push(cuenta);
+    document.getElementById('ultimo').textContent =
+      'Cuenta ' + cuenta.id + ' · ' + cuenta.nombre + ' · ' + (cuenta.correo || '(correo vacío)');
+  }
+  document.getElementById('cantidad').textContent = cuentas.length;
+});
+
+document.getElementById('reiniciar').addEventListener('click', () => {
+  form.reset();
+  cuentas = [];
+  estado.textContent = 'Pendiente de ejecución';
+  estado.className = 'status';
+  for (const id of ['momento', 'correo-enviado', 'longitud', 'creada']) {
+    document.getElementById(id).textContent = 'Sin ejecutar';
+  }
+  document.getElementById('cantidad').textContent = '0';
+  document.getElementById('ultimo').textContent = 'Ninguno';
+  document.getElementById('nombre').focus();
+});
+</script>
+</body>
+</html>
